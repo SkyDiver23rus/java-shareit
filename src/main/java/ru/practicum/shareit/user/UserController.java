@@ -10,12 +10,11 @@ import java.util.concurrent.atomic.AtomicLong;
 @RestController
 @RequestMapping("/users")
 public class UserController {
-
     private final Map<Long, User> users = new HashMap<>();
     private final AtomicLong idGen = new AtomicLong(1);
 
     @PostMapping
-    public ResponseEntity<?> create(@RequestBody Map<String,Object> body) {
+    public ResponseEntity<?> create(@RequestBody Map<String, Object> body) {
         String name = (String) body.get("name");
         String email = (String) body.get("email");
 
@@ -43,7 +42,7 @@ public class UserController {
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody Map<String,Object> body) {
+    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody Map<String, Object> body) {
         User u = users.get(id);
         if (u == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "User not found"));
 
@@ -71,5 +70,9 @@ public class UserController {
 
     private boolean isValidEmail(String email) {
         return email != null && email.contains("@") && !email.contains(" ");
+    }
+
+    public boolean exists(Long userId) {
+        return users.containsKey(userId);
     }
 }
