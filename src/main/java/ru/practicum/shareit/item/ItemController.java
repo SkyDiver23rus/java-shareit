@@ -1,10 +1,12 @@
 package ru.practicum.shareit.item;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.user.UserController;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
@@ -17,8 +19,12 @@ public class ItemController {
     private final Map<Long, Item> items = new HashMap<>();
     private final AtomicLong idGen = new AtomicLong(1);
 
+    private final UserController userController;
 
-    private final Map<Long, String> userStub = new HashMap<>();
+    @Autowired
+    public ItemController(UserController userController) {
+        this.userController = userController;
+    }
 
     @PostMapping
     public ResponseEntity<?> create(
@@ -29,7 +35,7 @@ public class ItemController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "X-Sharer-User-Id required"));
 
 
-        if (!userStub.containsKey(userId))
+        if (!userController.exists(userId))
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "User not found"));
 
         String name = (String) body.get("name");
