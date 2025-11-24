@@ -3,9 +3,6 @@ package ru.practicum.shareit.user;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ru.practicum.shareit.user.exception.UserNotFoundException;
-import ru.practicum.shareit.user.exception.EmailAlreadyExistsException;
-import ru.practicum.shareit.user.exception.BadRequestException;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
@@ -18,7 +15,7 @@ public class UserController {
     private final AtomicLong idGen = new AtomicLong(1);
 
     @PostMapping
-    public ResponseEntity<?> create(@RequestBody Map<String, Object> body) {
+    public ResponseEntity<?> create(@RequestBody Map<String,Object> body) {
         String name = (String) body.get("name");
         String email = (String) body.get("email");
 
@@ -46,7 +43,7 @@ public class UserController {
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody Map<String,Object> body) {
         User u = users.get(id);
         if (u == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "User not found"));
 
