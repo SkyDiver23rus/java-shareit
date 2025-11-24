@@ -17,8 +17,8 @@ public class ItemController {
     private final Map<Long, Item> items = new HashMap<>();
     private final AtomicLong idGen = new AtomicLong(1);
 
-    // Симуляция доступа к юзерам для связанных тестов
-    private final Map<Long, String> userStub = new HashMap<>(); // нужно заменить на UserController при DI
+
+    private final Map<Long, String> userStub = new HashMap<>();
 
     @PostMapping
     public ResponseEntity<?> create(
@@ -28,7 +28,7 @@ public class ItemController {
         if (userId == null)
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "X-Sharer-User-Id required"));
 
-        // Проверка: есть ли пользователь в userStub!
+
         if (!userStub.containsKey(userId))
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "User not found"));
 
