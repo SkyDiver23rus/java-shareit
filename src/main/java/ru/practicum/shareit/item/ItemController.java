@@ -22,6 +22,11 @@ public class ItemController {
     public ResponseEntity<?> add(
             @RequestHeader(value = HeaderConstants.SHARER_USER_ID, required = false) Long userId,
             @RequestBody ItemDto dto) {
+        if (userId == null) {
+
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", "X-Sharer-User-Id required"));
+        }
         try {
             ItemDto saved = service.addItem(dto, userId);
             return ResponseEntity.status(HttpStatus.CREATED).body(saved);
@@ -38,6 +43,11 @@ public class ItemController {
             @RequestHeader(value = HeaderConstants.SHARER_USER_ID, required = false) Long userId,
             @PathVariable Long itemId,
             @RequestBody ItemDto dto) {
+        if (userId == null) {
+
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", "X-Sharer-User-Id required"));
+        }
         try {
             ItemDto upd = service.updateItem(itemId, dto, userId);
             return ResponseEntity.ok(upd);
