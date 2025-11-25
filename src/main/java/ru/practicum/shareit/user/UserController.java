@@ -1,78 +1,64 @@
 package ru.practicum.shareit.user;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
+import ru.practicum.shareit.user.dto.UserDto;
 
-import java.util.*;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/users")
 public class UserController {
-    private final Map<Long, User> users = new HashMap<>();
-    private final AtomicLong idGen = new AtomicLong(1);
+    private final UserService service;
+
+    public UserController(UserService service) {
+        this.service = service;
+    }
 
     @PostMapping
-    public ResponseEntity<?> create(@RequestBody Map<String, Object> body) {
-        String name = (String) body.get("name");
-        String email = (String) body.get("email");
+    public ResponseEntity<?> add(@RequestBody UserDto dto) {
+        try {
+            UserDto saved = service.addUser(dto);
+            return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", e.getMessage()));
+        }
+    }
 
-        if (name == null || name.trim().isEmpty() || email == null)
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Не указан email или имя"));
-
-        if (!isValidEmail(email))
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Невалидный email"));
-
-        if (users.values().stream().anyMatch(u -> u.getEmail().equalsIgnoreCase(email)))
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "Email уже занят"));
-
-        Long id = idGen.getAndIncrement();
-        User u = User.builder().id(id).name(name).email(email).build();
-        users.put(id, u);
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(u);
+    @PatchMapping("/{id}")
+    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody UserDto dto) {
+        try {
+            UserDto upd = service.updateUser(id, dto);
+            return ResponseEntity.ok(upd);
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "User not found"));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
+        }
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<?> get(@PathVariable Long id) {
-        User u = users.get(id);
-        if (u == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "User not found"));
-        return ResponseEntity.ok(u);
+        UserDto dto = service.getUserById(id);
+        if (dto == null)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "User not found"));
+        return ResponseEntity.ok(dto);
     }
 
-    @PatchMapping("/{id}")
-    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody Map<String, Object> body) {
-        User u = users.get(id);
-        if (u == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "User not found"));
-
-        String name = (String) body.get("name");
-        String email = (String) body.get("email");
-
-        if (email != null) {
-            if (!isValidEmail(email))
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Невалидный email"));
-            if (users.values().stream().anyMatch(us -> !us.getId().equals(id) && us.getEmail().equalsIgnoreCase(email)))
-                return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "Email уже занят"));
-            u.setEmail(email);
-        }
-        if (name != null) u.setName(name);
-
-        users.put(id, u);
-        return ResponseEntity.ok(u);
+    @GetMapping
+    public List<UserDto> getAll() {
+        return service.getAllUsers();
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        users.remove(id);
+    public ResponseEntity<?> delete(@PathVariable Long id) {
+        service.deleteUser(id); // если нет, просто ничего не возвращаем
         return ResponseEntity.ok().build();
-    }
-
-    private boolean isValidEmail(String email) {
-        return email != null && email.contains("@") && !email.contains(" ");
-    }
-
-    public boolean exists(Long userId) {
-        return users.containsKey(userId);
     }
 }
