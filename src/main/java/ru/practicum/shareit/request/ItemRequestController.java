@@ -1,45 +1,43 @@
 package ru.practicum.shareit.request;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.request.dto.ItemRequestDto;
 
-import java.time.LocalDateTime;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/requests")
 public class ItemRequestController {
+    private final ItemRequestService service;
 
-    private final Map<Long, ItemRequest> reqs = new HashMap<>();
-    private final AtomicLong idGen = new AtomicLong(1);
-
-    @PostMapping
-    public ResponseEntity<?> create(
-            @RequestHeader("X-Sharer-User-Id") Long userId,
-            @RequestBody Map<String, Object> body) {
-        String desc = (String) body.get("description");
-        if (desc == null || desc.isEmpty())
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", "Description required"));
-        Long id = idGen.getAndIncrement();
-        ItemRequest r = ItemRequest.builder()
-                .id(id).description(desc)
-                .requestorId(userId)
-                .created(LocalDateTime.now())
-                .build();
-        reqs.put(id, r);
-        return ResponseEntity.status(HttpStatus.CREATED).body(toDto(r));
+    public ItemRequestController(ItemRequestService service) {
+        this.service = service;
     }
 
-    private ItemRequestDto toDto(ItemRequest r) {
-        return ItemRequestDto.builder()
-                .id(r.getId())
-                .description(r.getDescription())
-                .requestorId(r.getRequestorId())
-                .created(r.getCreated())
-                .build();
+    @PostMapping
+    public ResponseEntity<ItemRequestDto> add(@RequestBody ItemRequestDto dto) {
+        ItemRequestDto saved = service.addRequest(dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<?> get(@PathVariable Long id) {
+        ItemRequestDto dto = service.getRequest(id);
+        if (dto == null)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "ItemRequest not found"));
+        return ResponseEntity.ok(dto);
+    }
+
+    @GetMapping
+    public List<ItemRequestDto> getAll() {
+        return service.getAll();
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> delete(@PathVariable Long id) {
+        service.deleteRequest(id);
+        return ResponseEntity.ok().build();
     }
 }

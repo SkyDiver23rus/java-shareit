@@ -1,146 +1,71 @@
 package ru.practicum.shareit.item;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
-import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.dto.ItemDto;
-import ru.practicum.shareit.user.UserController;
+import ru.practicum.shareit.util.HeaderConstants;
 
-import java.util.*;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/items")
 public class ItemController {
+    private final ItemService service;
 
-    private final Map<Long, Item> items = new HashMap<>();
-    private final AtomicLong idGen = new AtomicLong(1);
-
-    private final UserController userController;
-
-    @Autowired
-    public ItemController(UserController userController) {
-        this.userController = userController;
+    public ItemController(ItemService service) {
+        this.service = service;
     }
 
     @PostMapping
-    public ResponseEntity<?> create(
-            @RequestHeader(value = "X-Sharer-User-Id", required = false) Long userId,
-            @RequestBody Map<String, Object> body) {
-
-        if (userId == null)
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "X-Sharer-User-Id required"));
-
-
-        if (!userController.exists(userId))
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "User not found"));
-
-        String name = (String) body.get("name");
-        String description = (String) body.get("description");
-        Boolean available = body.get("available") != null ? Boolean.valueOf(body.get("available").toString()) : null;
-
-        if (name == null || name.isEmpty())
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Name required"));
-        if (description == null || description.isEmpty())
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Description required"));
-        if (available == null)
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Available required"));
-
-        Long requestId = body.get("requestId") != null ? Long.valueOf(body.get("requestId").toString()) : null;
-
-        Long id = idGen.getAndIncrement();
-        Item item = Item.builder()
-                .id(id)
-                .name(name)
-                .description(description)
-                .available(available)
-                .ownerId(userId)
-                .requestId(requestId)
-                .build();
-
-        items.put(id, item);
-        return ResponseEntity.status(HttpStatus.CREATED).body(toDto(item));
+    public ResponseEntity<?> add(
+            @RequestHeader(value = HeaderConstants.SHARER_USER_ID, required = false) Long userId,
+            @RequestBody ItemDto dto) {
+        try {
+            ItemDto saved = service.addItem(dto, userId);
+            return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+        } catch (IllegalArgumentException ex) {
+            if ("User not found".equals(ex.getMessage())) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", ex.getMessage()));
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", ex.getMessage()));
+        }
     }
 
     @PatchMapping("/{itemId}")
     public ResponseEntity<?> update(
-            @RequestHeader(value = "X-Sharer-User-Id", required = false) Long userId,
+            @RequestHeader(value = HeaderConstants.SHARER_USER_ID, required = false) Long userId,
             @PathVariable Long itemId,
-            @RequestBody Map<String, Object> body) {
-
-        if (userId == null)
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "X-Sharer-User-Id required"));
-        Item item = items.get(itemId);
-        if (item == null)
+            @RequestBody ItemDto dto) {
+        try {
+            ItemDto upd = service.updateItem(itemId, dto, userId);
+            return ResponseEntity.ok(upd);
+        } catch (NoSuchElementException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Item not found"));
-        if (!item.getOwnerId().equals(userId))
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Access denied"));
-
-        if (body.containsKey("name")) {
-            String name = (String) body.get("name");
-            if (name == null || name.isEmpty())
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Name required"));
-            item.setName(name);
+        } catch (IllegalArgumentException e) {
+            if ("Access denied".equals(e.getMessage()))
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
         }
-        if (body.containsKey("description")) {
-            String description = (String) body.get("description");
-            if (description == null || description.isEmpty())
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Description required"));
-            item.setDescription(description);
-        }
-        if (body.containsKey("available")) {
-            Boolean available = Boolean.valueOf(body.get("available").toString());
-            if (available == null)
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Available required"));
-            item.setAvailable(available);
-        }
-        items.put(itemId, item);
-        return ResponseEntity.ok(toDto(item));
     }
 
     @GetMapping("/{itemId}")
     public ResponseEntity<?> get(@PathVariable Long itemId) {
-        Item item = items.get(itemId);
-        if (item == null)
+        ItemDto dto = service.getItem(itemId);
+        if (dto == null)
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Item not found"));
-        return ResponseEntity.ok(toDto(item));
+        return ResponseEntity.ok(dto);
     }
 
     @GetMapping
-    public ResponseEntity<?> getAll(@RequestHeader("X-Sharer-User-Id") Long userId) {
-        List<ItemDto> res = items.values().stream()
-                .filter(it -> userId != null && it.getOwnerId().equals(userId))
-                .map(this::toDto)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(res);
+    public ResponseEntity<List<ItemDto>> getAll(@RequestHeader(HeaderConstants.SHARER_USER_ID) Long userId) {
+        return ResponseEntity.ok(service.getItemsOfUser(userId));
     }
 
     @GetMapping("/search")
     public ResponseEntity<List<ItemDto>> search(
             @RequestParam(value = "text") String text) {
-        if (text == null || text.trim().isEmpty())
-            return ResponseEntity.ok(Collections.emptyList());
-
-        String t = text.toLowerCase();
-        List<ItemDto> result = items.values().stream()
-                .filter(item -> Boolean.TRUE.equals(item.getAvailable())
-                        && (item.getName().toLowerCase().contains(t) || item.getDescription().toLowerCase().contains(t)))
-                .map(this::toDto)
-                .collect(Collectors.toList());
-
-        return ResponseEntity.ok(result);
-    }
-
-    private ItemDto toDto(Item item) {
-        return ItemDto.builder()
-                .id(item.getId())
-                .name(item.getName())
-                .description(item.getDescription())
-                .available(item.getAvailable())
-                .requestId(item.getRequestId())
-                .build();
+        return ResponseEntity.ok(service.search(text));
     }
 }
