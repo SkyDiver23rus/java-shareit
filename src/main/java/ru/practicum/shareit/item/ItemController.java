@@ -1,81 +1,60 @@
 package ru.practicum.shareit.item;
 
 import org.springframework.http.*;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.item.dto.*;
 import ru.practicum.shareit.util.HeaderConstants;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+
 import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/items")
+@Validated
 public class ItemController {
-    private final ItemService service;
 
-    public ItemController(ItemService service) {
-        this.service = service;
+    private final ItemService itemService;
+
+    public ItemController(ItemService itemService) {
+        this.itemService = itemService;
     }
 
     @PostMapping
-    public ResponseEntity<?> add(
-            @RequestHeader(value = HeaderConstants.SHARER_USER_ID, required = false) Long userId,
-            @RequestBody ItemDto dto) {
-        if (userId == null) {
+    public ResponseEntity<?> create(
+            @RequestHeader(value = HeaderConstants.SHARER_USER_ID, required = false) @NotNull(message = "Не указан обязательный заголовок 'X-Sharer-User-Id'") Long userId,
+            @Valid @RequestBody ItemCreateDto dto) {
 
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", "X-Sharer-User-Id required"));
-        }
-        try {
-            ItemDto saved = service.addItem(dto, userId);
-            return ResponseEntity.status(HttpStatus.CREATED).body(saved);
-        } catch (IllegalArgumentException ex) {
-            if ("User not found".equals(ex.getMessage())) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", ex.getMessage()));
-            }
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", ex.getMessage()));
-        }
+
+        var saved = itemService.addItem(dto, userId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
     @PatchMapping("/{itemId}")
     public ResponseEntity<?> update(
-            @RequestHeader(value = HeaderConstants.SHARER_USER_ID, required = false) Long userId,
+            @RequestHeader(value = HeaderConstants.SHARER_USER_ID, required = false) @NotNull(message = "Не указан обязательный заголовок 'X-Sharer-User-Id'") Long userId,
             @PathVariable Long itemId,
-            @RequestBody ItemDto dto) {
-        if (userId == null) {
+            @RequestBody ItemUpdateDto dto) {
 
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", "X-Sharer-User-Id required"));
-        }
-        try {
-            ItemDto upd = service.updateItem(itemId, dto, userId);
-            return ResponseEntity.ok(upd);
-        } catch (NoSuchElementException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Item not found"));
-        } catch (IllegalArgumentException e) {
-            if ("Access denied".equals(e.getMessage()))
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
-        }
+        var updated = itemService.updateItem(itemId, dto, userId);
+        return ResponseEntity.ok(updated);
     }
 
     @GetMapping("/{itemId}")
     public ResponseEntity<?> get(@PathVariable Long itemId) {
-        ItemDto dto = service.getItem(itemId);
-        if (dto == null)
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Item not found"));
-        return ResponseEntity.ok(dto);
+        var item = itemService.getItem(itemId);
+        return ResponseEntity.ok(item);
     }
 
     @GetMapping
     public ResponseEntity<List<ItemDto>> getAll(@RequestHeader(HeaderConstants.SHARER_USER_ID) Long userId) {
-        return ResponseEntity.ok(service.getItemsOfUser(userId));
+        return ResponseEntity.ok(itemService.getItemsOfUser(userId));
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<ItemDto>> search(
-            @RequestParam(value = "text") String text) {
-        return ResponseEntity.ok(service.search(text));
+    public ResponseEntity<List<ItemDto>> search(@RequestParam(value = "text", required = false) String text) {
+        return ResponseEntity.ok(itemService.search(text));
     }
 }
