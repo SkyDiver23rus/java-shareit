@@ -3,6 +3,7 @@ package ru.practicum.shareit.booking.repository;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.model.BookingStatus;
 
@@ -63,4 +64,16 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     // Получение всех бронирований по itemId
     List<Booking> findByItemId(Long itemId);
+
+    // Получить все APPROVED бронирования для списка вещей
+    List<Booking> findAllByItemIdInAndStatusOrderByStartAsc(
+            @Param("itemIds") List<Long> itemIds,
+            @Param("status") BookingStatus status);
+
+    // Получить все APPROVED бронирования для одной вещи
+    List<Booking> findAllByItemIdAndStatusOrderByStartAsc(
+            @Param("itemId") Long itemId,
+            @Param("status") BookingStatus status);
+
+
 }

@@ -21,7 +21,6 @@ import ru.practicum.shareit.user.model.User;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -35,24 +34,19 @@ public class BookingServiceImpl implements BookingService {
     @Override
     @Transactional
     public BookingResponseDto create(BookingRequestDto bookingRequestDto, Long userId) {
-
         User booker = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с ID " + userId + " не найден"));
 
-
         Item item = itemRepository.findById(bookingRequestDto.getItemId())
                 .orElseThrow(() -> new NotFoundException("Вещь с ID " + bookingRequestDto.getItemId() + " не найдена"));
-
 
         if (!item.getAvailable()) {
             throw new UnavailableItemException("Вещь с ID " + item.getId() + " недоступна для бронирования");
         }
 
-
         if (item.getOwner().getId().equals(userId)) {
             throw new AccessDeniedException("Владелец не может бронировать свою вещь");
         }
-
 
         LocalDateTime start = bookingRequestDto.getStart();
         LocalDateTime end = bookingRequestDto.getEnd();
@@ -67,7 +61,6 @@ public class BookingServiceImpl implements BookingService {
             throw new ValidationException("Дата окончания должна быть позже даты начала");
         }
 
-
         Booking booking = BookingMapper.toBooking(bookingRequestDto, item, booker);
         Booking savedBooking = bookingRepository.save(booking);
 
@@ -77,20 +70,16 @@ public class BookingServiceImpl implements BookingService {
     @Override
     @Transactional
     public BookingResponseDto approve(Long bookingId, Long userId, Boolean approved) {
-
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new NotFoundException("Бронирование с ID " + bookingId + " не найдено"));
-
 
         if (!booking.getItem().getOwner().getId().equals(userId)) {
             throw new AccessDeniedException("Только владелец вещи может подтверждать/отклонять бронирование");
         }
 
-
         if (booking.getStatus() != BookingStatus.WAITING) {
             throw new ValidationException("Бронирование уже обработано");
         }
-
 
         booking.setStatus(approved ? BookingStatus.APPROVED : BookingStatus.REJECTED);
         Booking updatedBooking = bookingRepository.save(booking);
@@ -100,7 +89,6 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public BookingResponseDto getById(Long bookingId, Long userId) {
-
         Booking booking = bookingRepository.findByIdAndBookerIdOrItemOwnerId(bookingId, userId)
                 .orElseThrow(() -> new NotFoundException("Бронирование с ID " + bookingId + " не найдено или доступ запрещен"));
 
@@ -109,7 +97,6 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public List<BookingResponseDto> getAllByBooker(Long bookerId, BookingState state, int from, int size) {
-
         userRepository.findById(bookerId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с ID " + bookerId + " не найден"));
 
@@ -140,14 +127,11 @@ public class BookingServiceImpl implements BookingService {
                 throw new IllegalArgumentException("Unknown state: " + state);
         }
 
-        return bookings.stream()
-                .map(BookingMapper::toBookingResponseDto)
-                .collect(Collectors.toList());
+        return BookingMapper.toBookingResponseDtoList(bookings);
     }
 
     @Override
     public List<BookingResponseDto> getAllByOwner(Long ownerId, BookingState state, int from, int size) {
-
         userRepository.findById(ownerId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с ID " + ownerId + " не найден"));
 
@@ -178,8 +162,6 @@ public class BookingServiceImpl implements BookingService {
                 throw new IllegalArgumentException("Unknown state: " + state);
         }
 
-        return bookings.stream()
-                .map(BookingMapper::toBookingResponseDto)
-                .collect(Collectors.toList());
+        return BookingMapper.toBookingResponseDtoList(bookings);
     }
 }
