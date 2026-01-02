@@ -9,6 +9,10 @@ import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.map.UserMapper;
 import ru.practicum.shareit.user.model.User;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
+
 public class BookingMapper {
 
     public static Booking toBooking(BookingRequestDto dto, Item item, User booker) {
@@ -38,5 +42,15 @@ public class BookingMapper {
                 .booker(booking.getBooker() != null ? UserMapper.toUserDto(booking.getBooker()) : null)
                 .item(booking.getItem() != null ? ItemMapper.toItemDto(booking.getItem()) : null)
                 .build();
+    }
+
+    public static List<BookingResponseDto> toBookingResponseDtoList(Collection<Booking> bookings) {
+        if (bookings == null || bookings.isEmpty()) {
+            return List.of();
+        }
+
+        return bookings.stream()
+                .map(BookingMapper::toBookingResponseDto)
+                .collect(Collectors.toList());
     }
 }
