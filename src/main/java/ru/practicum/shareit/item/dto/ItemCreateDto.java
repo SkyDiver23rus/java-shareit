@@ -1,9 +1,8 @@
 package ru.practicum.shareit.item.dto;
 
-import lombok.*;
-
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import lombok.*;
 
 @Getter
 @Setter
@@ -20,5 +19,5 @@ public class ItemCreateDto {
     @NotNull(message = "Поле 'available' обязательно для заполнения")
     private Boolean available;
 
-    private Long requestId;
+    private Long requestId;  // ID запроса, если вещь создается в ответ на запрос
 }
