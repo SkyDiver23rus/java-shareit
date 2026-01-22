@@ -8,11 +8,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import ru.practicum.shareit.server.booking.dto.BookingRequestDto;
-import ru.practicum.shareit.server.booking.dto.BookingResponseDto;
-import ru.practicum.shareit.server.booking.model.BookingState;
-import ru.practicum.shareit.server.booking.service.BookingService;
-import ru.practicum.shareit.server.util.HeaderConstants;
+import ru.practicum.shareit.booking.dto.BookingRequestDto;
+import ru.practicum.shareit.booking.dto.BookingResponseDto;
+import ru.practicum.shareit.booking.model.BookingState;
+import ru.practicum.shareit.booking.service.BookingService;
+import ru.practicum.shareit.util.HeaderConstants;
 
 import java.util.List;
 
