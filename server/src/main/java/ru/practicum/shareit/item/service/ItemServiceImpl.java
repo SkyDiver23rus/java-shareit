@@ -1,15 +1,12 @@
 package ru.practicum.shareit.item.service;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.practicum.shareit.booking.model.Booking;
-import ru.practicum.shareit.booking.model.BookingStatus;
-import ru.practicum.shareit.booking.repository.BookingRepository;
-import ru.practicum.shareit.exception.AccessDeniedException;
-import ru.practicum.shareit.exception.NotFoundException;
-import ru.practicum.shareit.exception.UnavailableItemException;
+import ru.practicum.shareit.server.booking.model.Booking;
+import ru.practicum.shareit.server.booking.model.BookingStatus;
+import ru.practicum.shareit.server.booking.repository.BookingRepository;
+import ru.practicum.shareit.exception.*;
 import ru.practicum.shareit.item.dto.*;
 import ru.practicum.shareit.item.map.CommentMapper;
 import ru.practicum.shareit.item.map.ItemMapper;
@@ -19,14 +16,13 @@ import ru.practicum.shareit.item.repository.CommentRepository;
 import ru.practicum.shareit.item.repository.ItemRepository;
 import ru.practicum.shareit.request.model.ItemRequest;
 import ru.practicum.shareit.request.repository.ItemRequestRepository;
-import ru.practicum.shareit.model.User;
-import ru.practicum.shareit.repository.UserRepository;
+import ru.practicum.shareit.user.model.User;
+import ru.practicum.shareit.user.repository.UserRepository;
 
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -98,8 +94,10 @@ public class ItemServiceImpl implements ItemService {
         if (item.getOwner().getId().equals(userId)) {
             LocalDateTime now = LocalDateTime.now();
 
+            // Получаем все APPROVED бронирования для этой вещи
             List<Booking> itemBookings = bookingRepository.findAllByItemIdAndStatusOrderByStartAsc(itemId, BookingStatus.APPROVED);
 
+            // Ищем последнее завершенное бронирование
             Optional<Booking> lastBookingOpt = itemBookings.stream()
                     .filter(b -> b.getEnd().isBefore(now))
                     .max(Comparator.comparing(Booking::getEnd));
@@ -112,6 +110,7 @@ public class ItemServiceImpl implements ItemService {
                         .build();
             }
 
+            // Ищем ближайшее будущее бронирование
             Optional<Booking> nextBookingOpt = itemBookings.stream()
                     .filter(b -> b.getStart().isAfter(now))
                     .min(Comparator.comparing(Booking::getStart));
@@ -139,21 +138,26 @@ public class ItemServiceImpl implements ItemService {
             throw new NotFoundException("Пользователь не найден с таким id: " + userId);
         }
 
+        // Загружаем все вещи пользователя
         List<Item> items = itemRepository.findByOwnerId(userId);
         if (items.isEmpty()) {
             return List.of();
         }
 
+        // Получаем ID всех вещей
         List<Long> itemIds = items.stream()
                 .map(Item::getId)
                 .collect(Collectors.toList());
 
+        //Загружаем APPROVED бронирования для всех вещей пользователя за один запрос
         List<Booking> allBookings = bookingRepository.findAllByItemIdInAndStatusOrderByStartAsc(
                 itemIds, BookingStatus.APPROVED);
 
+        //Группируем бронирования по ID вещи
         Map<Long, List<Booking>> bookingsByItemId = allBookings.stream()
                 .collect(Collectors.groupingBy(booking -> booking.getItem().getId()));
 
+        //Загружаем все комментарии для всех вещей за один запрос
         Map<Long, List<CommentResponseDto>> commentsByItemId = commentRepository.findByItemIdIn(itemIds)
                 .stream()
                 .collect(Collectors.groupingBy(
@@ -161,6 +165,7 @@ public class ItemServiceImpl implements ItemService {
                         Collectors.mapping(CommentMapper::toCommentResponseDto, Collectors.toList())
                 ));
 
+        //Обрабатываем каждую вещь
         LocalDateTime now = LocalDateTime.now();
         List<ItemWithBookingsDto> result = new ArrayList<>();
 
@@ -171,6 +176,7 @@ public class ItemServiceImpl implements ItemService {
             List<Booking> itemBookings = bookingsByItemId.getOrDefault(item.getId(), List.of());
 
             if (!itemBookings.isEmpty()) {
+                // Находим последнее завершенное бронирование
                 Optional<Booking> lastBookingOpt = itemBookings.stream()
                         .filter(b -> b.getEnd().isBefore(now))
                         .max(Comparator.comparing(Booking::getEnd));
@@ -183,6 +189,7 @@ public class ItemServiceImpl implements ItemService {
                             .build();
                 }
 
+                // Находим ближайшее будущее бронирование
                 Optional<Booking> nextBookingOpt = itemBookings.stream()
                         .filter(b -> b.getStart().isAfter(now))
                         .min(Comparator.comparing(Booking::getStart));
@@ -200,6 +207,7 @@ public class ItemServiceImpl implements ItemService {
             result.add(ItemMapper.toItemWithBookingsDto(item, lastBooking, nextBooking, comments));
         }
 
+        //Сортируем результат по ID вещей
         result.sort(Comparator.comparing(ItemWithBookingsDto::getId));
 
         return result;
@@ -218,37 +226,23 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     @Transactional
-    public CommentResponseDto addComment(Long userId, Long itemId, CommentRequestDto requestDto) {
-        log.info("Adding comment to item {} by user {}", itemId, userId);
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
+    public CommentResponseDto addComment(Long itemId, Long userId, CommentRequestDto commentRequestDto) {
+        User author = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Пользователь с ID " + userId + " не найден"));
 
         Item item = itemRepository.findById(itemId)
-                .orElseThrow(() -> new NotFoundException("Вещь не найдена"));
+                .orElseThrow(() -> new NotFoundException("Вещь с ID " + itemId + " не найдена"));
 
-        boolean hasCompletedBooking = bookingRepository.existsCompletedBooking(
-                itemId,
-                userId,
-                BookingStatus.APPROVED,
-                LocalDateTime.now()
-        );
+        LocalDateTime now = LocalDateTime.now();
+        boolean hasBooked = bookingRepository.existsByBookerIdAndItemIdAndEndBefore(userId, itemId, now);
 
-        if (!hasCompletedBooking) {
-            throw new UnavailableItemException(
-                    "Комментарий можно оставить только после завершения бронирования"
-            );
+        if (!hasBooked) {
+            throw new ValidationException("Пользователь не брал эту вещь в аренду или аренда еще не завершена");
         }
 
-        Comment comment = Comment.builder()
-                .text(requestDto.getText())
-                .item(item)
-                .author(user)
-                .created(LocalDateTime.now())
-                .build();
+        Comment comment = CommentMapper.toComment(commentRequestDto, item, author);
+        Comment savedComment = commentRepository.save(comment);
 
-        Comment saved = commentRepository.save(comment);
-
-        return CommentMapper.toCommentResponseDto(saved);
+        return CommentMapper.toCommentResponseDto(savedComment);
     }
 }

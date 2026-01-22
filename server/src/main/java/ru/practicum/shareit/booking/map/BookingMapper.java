@@ -1,13 +1,13 @@
-package ru.practicum.shareit.booking.map;
+package ru.practicum.shareit.server.booking.map;
 
-import ru.practicum.shareit.booking.dto.BookingRequestDto;
-import ru.practicum.shareit.booking.dto.BookingResponseDto;
-import ru.practicum.shareit.booking.model.Booking;
-import ru.practicum.shareit.booking.model.BookingStatus;
-import ru.practicum.shareit.item.map.ItemMapper;
-import ru.practicum.shareit.item.model.Item;
-import ru.practicum.shareit.map.UserMapper;
-import ru.practicum.shareit.model.User;
+import ru.practicum.shareit.server.booking.dto.BookingRequestDto;
+import ru.practicum.shareit.server.booking.dto.BookingResponseDto;
+import ru.practicum.shareit.server.booking.model.Booking;
+import ru.practicum.shareit.server.booking.model.BookingStatus;
+import ru.practicum.shareit.server.item.map.ItemMapper;
+import ru.practicum.shareit.server.item.model.Item;
+import ru.practicum.shareit.server.user.map.UserMapper;
+import ru.practicum.shareit.server.user.model.User;
 
 import java.util.Collection;
 import java.util.List;

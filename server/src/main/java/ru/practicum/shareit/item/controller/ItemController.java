@@ -1,6 +1,5 @@
 package ru.practicum.shareit.item.controller;
 
-import lombok.extern.slf4j.Slf4j;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -13,7 +12,6 @@ import ru.practicum.shareit.util.HeaderConstants;
 
 import java.util.List;
 
-@Slf4j
 @RestController
 @RequestMapping("/items")
 @RequiredArgsConstructor
@@ -67,9 +65,8 @@ public class ItemController {
     public ResponseEntity<CommentResponseDto> addComment(
             @RequestHeader(HeaderConstants.SHARER_USER_ID) Long userId,
             @PathVariable Long itemId,
-            @Valid @RequestBody CommentRequestDto requestDto) {
-        log.info("POST /items/{}/comment with userId={}", itemId, userId);
-        CommentResponseDto comment = itemService.addComment(userId, itemId, requestDto);
+            @Valid @RequestBody CommentRequestDto commentRequestDto) {
+        CommentResponseDto comment = itemService.addComment(itemId, userId, commentRequestDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(comment);
     }
 }

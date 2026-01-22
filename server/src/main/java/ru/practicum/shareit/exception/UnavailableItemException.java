@@ -1,4 +1,4 @@
-package ru.practicum.shareit.exception;
+package ru.practicum.shareit.server.exception;
 
 public class UnavailableItemException extends RuntimeException {
     public UnavailableItemException(String message) {

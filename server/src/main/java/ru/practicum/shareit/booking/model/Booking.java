@@ -1,9 +1,8 @@
-package ru.practicum.shareit.booking.model;
+package ru.practicum.shareit.server.booking.model;
 
-import jakarta.persistence.*;
 import lombok.*;
-import ru.practicum.shareit.item.model.Item;
-import ru.practicum.shareit.model.User;
+import ru.practicum.shareit.server.item.model.Item;
+import ru.practicum.shareit.server.user.model.User;
 
 import java.time.LocalDateTime;
 

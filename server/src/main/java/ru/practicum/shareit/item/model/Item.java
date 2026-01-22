@@ -1,9 +1,8 @@
 package ru.practicum.shareit.item.model;
 
-import jakarta.persistence.*;
 import lombok.*;
-import ru.practicum.shareit.model.User;
 import ru.practicum.shareit.request.model.ItemRequest;
+import ru.practicum.shareit.user.model.User;
 
 @Entity
 @Table(name = "items")
@@ -17,10 +16,10 @@ public class Item {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(name = "name", nullable = false, length = 255)
     private String name;
 
-    @Column(nullable = false)
+    @Column(name = "description", nullable = false, length = 1000)
     private String description;
 
     @Column(name = "is_available", nullable = false)

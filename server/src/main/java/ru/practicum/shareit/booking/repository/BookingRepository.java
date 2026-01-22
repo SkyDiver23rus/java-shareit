@@ -1,11 +1,11 @@
-package ru.practicum.shareit.booking.repository;
+package ru.practicum.shareit.server.booking.repository;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import ru.practicum.shareit.booking.model.Booking;
-import ru.practicum.shareit.booking.model.BookingStatus;
+import ru.practicum.shareit.server.booking.model.Booking;
+import ru.practicum.shareit.server.booking.model.BookingStatus;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -39,19 +39,6 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             "AND b.status = 'APPROVED' " +
             "AND b.end < :now")
     boolean existsByBookerIdAndItemIdAndEndBefore(Long userId, Long itemId, LocalDateTime now);
-
-    @Query("SELECT CASE WHEN COUNT(b) > 0 THEN true ELSE false END " +
-            "FROM Booking b " +
-            "WHERE b.item.id = :itemId " +
-            "AND b.booker.id = :bookerId " +
-            "AND b.status = :status " +
-            "AND b.end < :end")
-    boolean existsCompletedBooking(
-            @Param("itemId") Long itemId,
-            @Param("bookerId") Long bookerId,
-            @Param("status") BookingStatus status,
-            @Param("end") LocalDateTime end
-    );
 
     //методы букинга
     List<Booking> findByBookerId(Long bookerId, Pageable pageable);
