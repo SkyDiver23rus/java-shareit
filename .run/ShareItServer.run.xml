@@ -6,7 +6,7 @@
     <module name="shareit-server" />
     <extension name="coverage">
       <pattern>
-        <option name="PATTERN" value="ru.practicum.shareit.*" />
+        <option name="PATTERN" value="ru.practicum.shareit.item.service.*" />
         <option name="ENABLED" value="true" />
       </pattern>
     </extension>

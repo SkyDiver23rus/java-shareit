@@ -15,5 +15,5 @@ public interface ItemService {
 
     List<ItemDto> search(String text);
 
-    CommentResponseDto addComment(Long itemId, Long userId, CommentRequestDto commentRequestDto);
+    CommentResponseDto addComment(Long userId, Long itemId, CommentRequestDto requestDto);
 }

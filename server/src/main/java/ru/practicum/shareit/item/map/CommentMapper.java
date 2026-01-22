@@ -1,10 +1,10 @@
-package ru.practicum.shareit.server.item.map;
+package ru.practicum.shareit.item.map;
 
-import ru.practicum.shareit.server.item.dto.CommentRequestDto;
-import ru.practicum.shareit.server.item.dto.CommentResponseDto;
-import ru.practicum.shareit.server.item.model.Comment;
-import ru.practicum.shareit.server.item.model.Item;
-import ru.practicum.shareit.server.user.model.User;
+import ru.practicum.shareit.item.dto.CommentRequestDto;
+import ru.practicum.shareit.item.dto.CommentResponseDto;
+import ru.practicum.shareit.item.model.Comment;
+import ru.practicum.shareit.item.model.Item;
+import ru.practicum.shareit.model.User;
 
 public class CommentMapper {
 
