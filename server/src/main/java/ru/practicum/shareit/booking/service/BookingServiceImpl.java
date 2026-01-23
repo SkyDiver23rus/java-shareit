@@ -70,6 +70,11 @@ public class BookingServiceImpl implements BookingService {
     @Override
     @Transactional
     public BookingResponseDto approve(Long bookingId, Long userId, Boolean approved) {
+
+        if (approved == null) {
+            throw new ValidationException("Параметр approved обязателен");
+        }
+
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new NotFoundException("Бронирование с ID " + bookingId + " не найдено"));
 

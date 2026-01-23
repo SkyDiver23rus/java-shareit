@@ -47,7 +47,7 @@ public class UserMapper {
             return;
         }
 
-        if (dto.getName() != null) {
+        if (dto.getName() != null && !dto.getName().isBlank()) {
             user.setName(dto.getName());
         }
 

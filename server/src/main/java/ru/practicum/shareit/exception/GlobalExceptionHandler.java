@@ -66,6 +66,41 @@ public class GlobalExceptionHandler {
         return Map.of("error", message);
     }
 
+    @ExceptionHandler(ConstraintViolationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Map<String, String> handleConstraintViolation(ConstraintViolationException e) {
+        log.error("Ошибка валидации параметров: {}", e.getMessage());
+        return Map.of("error", e.getMessage());
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Map<String, String> handleTypeMismatch(MethodArgumentTypeMismatchException e) {
+        log.error("Некорректный тип параметра: {}", e.getMessage());
+        return Map.of("error", e.getMessage());
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Map<String, String> handleMissingParam(MissingServletRequestParameterException e) {
+        log.error("Отсутствует параметр запроса: {}", e.getMessage());
+        return Map.of("error", e.getMessage());
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Map<String, String> handleNotReadable(HttpMessageNotReadableException e) {
+        log.error("Ошибка чтения тела запроса: {}", e.getMessage());
+        return Map.of("error", "Некорректное тело запроса");
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public Map<String, String> handleDataIntegrity(DataIntegrityViolationException e) {
+        log.error("Конфликт данных: {}", e.getMessage());
+        return Map.of("error", "Конфликт данных");
+    }
+
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public Map<String, String> handleInternalError(Exception e) {

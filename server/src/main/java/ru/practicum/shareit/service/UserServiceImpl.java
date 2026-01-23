@@ -7,11 +7,13 @@ import ru.practicum.shareit.dto.UserCreateDto;
 import ru.practicum.shareit.dto.UserUpdateDto;
 import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.dto.UserDto;
+import ru.practicum.shareit.exception.ValidationException;
 import ru.practicum.shareit.map.UserMapper;
 import ru.practicum.shareit.model.User;
 import ru.practicum.shareit.repository.UserRepository;
 
 import java.util.List;
+import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
@@ -19,6 +21,9 @@ import java.util.List;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository repository;
+
+    private static final Pattern EMAIL_PATTERN =
+            Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
 
     @Override
     @Transactional
@@ -36,6 +41,18 @@ public class UserServiceImpl implements UserService {
     public UserDto updateUser(Long id, UserUpdateDto dto) {
         User existing = repository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
+
+        if (dto.getName() != null && dto.getName().isBlank()) {
+            throw new ValidationException("Имя не может быть пустым");
+        }
+        if (dto.getEmail() != null) {
+            if (dto.getEmail().isBlank()) {
+                throw new ValidationException("Email не может быть пустым");
+            }
+            if (!EMAIL_PATTERN.matcher(dto.getEmail()).matches()) {
+                throw new ValidationException("Некорректный формат email");
+            }
+        }
 
         if (dto.getEmail() != null && !dto.getEmail().equalsIgnoreCase(existing.getEmail())) {
             repository.findByEmail(dto.getEmail()).ifPresent(u -> {

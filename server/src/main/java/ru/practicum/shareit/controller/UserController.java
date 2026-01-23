@@ -1,6 +1,7 @@
 package ru.practicum.shareit.controller;
 
 import javax.validation.Valid;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,7 +29,10 @@ public class UserController {
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<UserDto> update(@PathVariable Long id, @Valid @RequestBody UserUpdateDto dto) {
+    public ResponseEntity<UserDto> update(
+            @PathVariable Long id,
+            @RequestBody UserUpdateDto dto
+    ) {
         UserDto updated = userService.updateUser(id, dto);
         return ResponseEntity.ok(updated);
     }
