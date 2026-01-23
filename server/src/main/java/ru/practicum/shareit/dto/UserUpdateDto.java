@@ -1,6 +1,6 @@
 package ru.practicum.shareit.dto;
 
-import jakarta.validation.constraints.Email;
+import javax.validation.constraints.Email;
 import lombok.*;
 
 @Getter

@@ -1,7 +1,7 @@
 package ru.practicum.shareit.item.controller;
 
 import lombok.extern.slf4j.Slf4j;
-import jakarta.validation.Valid;
+import javax.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

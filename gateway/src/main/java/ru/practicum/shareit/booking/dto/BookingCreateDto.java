@@ -5,8 +5,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import ru.practicum.shareit.booking.validation.ValidBookingDates;
 
-import jakarta.validation.constraints.Future;
-import jakarta.validation.constraints.NotNull;
+import javax.validation.constraints.Future;
+import javax.validation.constraints.NotNull;
 
 import java.time.LocalDateTime;
 

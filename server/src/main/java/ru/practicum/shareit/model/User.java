@@ -1,6 +1,6 @@
 package ru.practicum.shareit.model;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 import lombok.*;
 
 @Entity
